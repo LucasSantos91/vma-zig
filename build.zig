@@ -18,9 +18,12 @@ pub fn build(b: *std.Build) void {
     vma.addCSourceFile(.{
         .file = vma_path,
         .flags = &.{},
-        .language = .c,
+        .language = .cpp,
     });
     vma.addIncludePath(vk_headers_path);
+    vma.addCMacro("VMA_IMPLEMENTATION", "1");
+    vma.link_libc = true;
+    vma.link_libcpp = true;
 
     if (optimize != .Debug) {
         translate.defineCMacro("NDEBUG", null);
