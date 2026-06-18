@@ -12,21 +12,32 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
     });
+    if (optimize != .Debug) {
+        translate.defineCMacro("NDEBUG", null);
+    }
     const vk_headers_path = vk_headers.path("include");
     translate.addIncludePath(vk_headers_path);
-    const vma = translate.addModule("vma-zig");
-    vma.addCSourceFile(.{
+    const raw_vma = translate.addModule("raw-vma-zig");
+    raw_vma.addIncludePath(vk_headers_path);
+    setModule(raw_vma, optimize, vma_path);
+
+    const vma = b.addModule("vma-zig", .{
+        .root_source_file = b.path("src/root.zig"),
+    });
+    setModule(vma, optimize, vma_path);
+}
+
+fn setModule(module: *std.Build.Module, optimize: std.builtin.OptimizeMode, vma_path: std.Build.LazyPath) void {
+    module.addCSourceFile(.{
         .file = vma_path,
         .flags = &.{},
         .language = .cpp,
     });
-    vma.addIncludePath(vk_headers_path);
-    vma.addCMacro("VMA_IMPLEMENTATION", "1");
-    vma.link_libc = true;
-    vma.link_libcpp = true;
+    module.addCMacro("VMA_IMPLEMENTATION", "1");
+    module.link_libc = true;
+    module.link_libcpp = true;
 
     if (optimize != .Debug) {
-        translate.defineCMacro("NDEBUG", null);
-        vma.addCMacro("NDEBUG", "1");
+        module.addCMacro("NDEBUG", "1");
     }
 }
